@@ -1,0 +1,161 @@
+
+import pandas as pd
+from datetime import datetime
+
+# Simple password for now (you can change it)
+SYSTEM_PASSWORD = "divyang123"
+
+def get_password():
+    password = input("Enter system password: ")
+    return password == SYSTEM_PASSWORD
+
+def get_valid_name():
+    while True:
+        name = input("Enter your full name: ").strip()
+        # Name must be at least 3 characters
+        if len(name) < 3:
+            print("Name must be at least 3 characters long. Please try again.")
+        else:
+            return name
+
+def get_valid_age():
+    while True:
+        try:
+            age = int(input("Enter your age: "))
+            if age < 1 or age > 120:
+                print("Age must be between 1 and 120. Please try again.")
+            else:
+                return age
+        except ValueError:
+            print("Please enter a valid number for age.")
+
+def get_valid_aadhaar():
+    while True:
+        aadhaar = input("Enter your 12-digit Aadhaar number: ").strip()
+        if len(aadhaar) == 12 and aadhaar.isdigit():
+            return aadhaar
+        else:
+            print("Aadhaar number must be exactly 12 digits. Please try again.")
+
+def get_valid_pan():
+    while True:
+        pan = input("Enter your PAN ID (e.g., ABCDE1234F): ").strip().upper()
+        if len(pan) == 10:
+            return pan
+        else:
+            print("PAN ID must be 10 characters. Please try again.")
+
+def get_disability_type():
+    print("\nSelect your primary disability type:")
+    print("1. Visual Disability (Eye)")
+    print("2. Locomotor Disability (Leg)")
+    print("3. Upper Limb Disability (Hand/Arm)")
+    print("4. Hearing Disability")
+    print("5. Multiple Disabilities")
+
+    while True:
+        choice = input("Enter choice (1-5): ").strip()
+        if choice == "1":
+            return "Visual"
+        elif choice == "2":
+            return "Locomotor"
+        elif choice == "3":
+            return "Upper Limb"
+        elif choice == "4":
+            return "Hearing"
+        elif choice == "5":
+            return "Multiple"
+        else:
+            print("Invalid choice. Please enter 1 to 5.")
+
+def get_eligible_aids(disability_type, age):
+    aids = []
+
+    # Central government age rule for smartphone: 16 to 35
+    if 16 <= age <= 35:
+        aids.append("Smartphone")
+
+    if disability_type in ["Visual", "Multiple"]:
+        aids.extend(["White Cane (Stick)", "Screen Reader Software", "Braille Kit"])
+
+    if disability_type in ["Locomotor", "Multiple"]:
+        aids.extend(["Wheelchair", "Artificial Limbs", "Two-Wheeler Support (if eligible)"])
+
+    if disability_type in ["Upper Limb", "Multiple"]:
+        aids.extend(["Artificial Limbs / Prosthetic Arm", "Specialized Hand Aids", "Two-Wheeler Support (if eligible)"])
+
+    if disability_type == "Hearing":
+        aids.extend(["Hearing Aid", "Assistive Listening Device"])
+
+    return aids
+
+def main():
+    print("=" * 70)
+    print("       DIVYANG WELFARE REGISTRATION SYSTEM")
+    print("=" * 70)
+
+    if not get_password():
+        print("Incorrect password. Access denied.")
+        return
+
+    print("\n--- Step 1: Beneficiary Registration ---\n")
+
+    name = get_valid_name()
+    age = get_valid_age()
+    city = input("Enter your city: ").strip()
+    state = input("Enter your state: ").strip()
+    aadhaar = get_valid_aadhaar()
+    pan = get_valid_pan()
+
+    disability_cert = input("Do you have a valid disability certificate? (Yes/No): ").strip().lower()
+    has_certificate = disability_cert in ["yes", "y"]
+
+    disability_type = get_disability_type()
+
+    eligible_aids = get_eligible_aids(disability_type, age)
+
+    print("\n" + "=" * 70)
+    print("              ELIGIBILITY SUMMARY")
+    print("=" * 70)
+    print(f"Name                : {name}")
+    print(f"Age                 : {age}")
+    print(f"City                : {city}")
+    print(f"State               : {state}")
+    print(f"Aadhaar             : {aadhaar}")
+    print(f"PAN ID              : {pan}")
+    print(f"Disability Certificate: {'Yes' if has_certificate else 'No'}")
+    print(f"Disability Type     : {disability_type}")
+    print("-" * 70)
+    print("You may be eligible for the following aids/appliances:")
+    for aid in eligible_aids:
+        print(" -", aid)
+    print("=" * 70)
+
+    # Save to CSV
+    record = {
+        "Name": [name],
+        "Age": [age],
+        "City": [city],
+        "State": [state],
+        "Aadhaar": [aadhaar],
+        "PAN": [pan],
+        "Has_Certificate": [has_certificate],
+        "Disability_Type": [disability_type],
+        "Eligible_Aids": ["; ".join(eligible_aids)],
+        "Registration_Date": [datetime.now().strftime("%d-%m-%Y %I:%M %p")]
+    }
+
+    df = pd.DataFrame(record)
+
+    try:
+        existing_df = pd.read_csv("divyang_beneficiaries.csv")
+        combined_df = pd.concat([existing_df, df], ignore_index=True)
+        combined_df.to_csv("divyang_beneficiaries.csv", index=False)
+    except FileNotFoundError:
+        df.to_csv("divyang_beneficiaries.csv", index=False)
+
+    print("\nYour registration details have been saved successfully.")
+    print("Data file: divyang_beneficiaries.csv")
+
+if __name__ == "__main__":
+    main()
